@@ -1,0 +1,34 @@
+name: Deploy API a GCP
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar el repositorio
+      uses: actions/checkout@v3
+
+    - name: Configurar SSH
+      run: |
+        echo "${{ secrets.GCP_SSH_KEY }}" > gcp_key
+        chmod 600 gcp_key
+
+    - name: Copiar archivos al servidor GCP
+      run: |
+        scp -o StrictHostKeyChecking=no -i gcp_key -r . ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/home/${{ secrets.GCP_USER }}/api
+
+    - name: Instalar dependencias y reiniciar API
+      run: |
+        ssh -o StrictHostKeyChecking=no -i gcp_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} << 'EOF'
+          cd /home/${{ secrets.GCP_USER }}/api
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          sudo systemctl restart api.service || echo "No hay servicio systemd, ejecutando manualmente"
+          nohup python3 app.py > output.log 2>&1 &
+        EOF
