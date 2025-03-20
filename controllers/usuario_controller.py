@@ -13,7 +13,7 @@ class UsuarioController:
         usuario = Usuario.query.get(id)
         if usuario:
             return jsonify(usuario.to_json())
-        return jsonify({"mensaje": "Usuario no encontrado en la BD"}), 404
+        return jsonify({"mensaje": "Usuario no encontrado en la BaDa"}), 404
 
     @staticmethod
     def crear_usuario():
